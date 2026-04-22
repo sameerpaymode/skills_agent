@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skill Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #f5f0e8;
+      --surface:    #faf8f4;
+      --border:     #e0dbd1;
+      --text-1:     #1a1714;
+      --text-2:     #6b6560;
+      --text-3:     #a09a94;
+      --accent:     #c96442;
+      --user-bg:    #1a1714;
+      --user-text:  #f5f0e8;
+      --skill-bg:   #ebf4eb;
+      --skill-text: #2d5a2d;
+      --skill-dot:  #4a9b4a;
+      --shadow-sm:  0 1px 2px rgba(26,23,20,0.06), 0 2px 8px rgba(26,23,20,0.04);
+      --shadow-md:  0 2px 6px rgba(26,23,20,0.08), 0 6px 20px rgba(26,23,20,0.05);
+      --r:          16px;
+      --r-sm:       10px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      position: relative;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-2);
+      letter-spacing: -0.1px;
+    }
+
+    .new-btn {
+      position: absolute;
+      right: 20px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 6px 13px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+
+    .new-btn:hover {
+      background: var(--surface);
+      color: var(--text-1);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ── Messages ── */
+    .feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 0 16px;
+      display: flex;
+      flex-direction: column;
+      scroll-behavior: smooth;
+    }
+
+    .feed::-webkit-scrollbar { width: 4px; }
+    .feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .msg-row {
+      display: flex;
+      gap: 11px;
+      padding: 4px 24px;
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      animation: rise 0.2s ease-out both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-row.user { flex-direction: row-reverse; }
+
+    .av {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .msg-row.assistant .av { background: var(--accent); color: #fff; }
+    .msg-row.user .av      { background: var(--user-bg); color: var(--bg); }
+
+    .msg-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .msg-row.user .msg-body { align-items: flex-end; }
+
+    .msg-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--text-3);
+      padding: 0 2px;
+    }
+
+    .bubble {
+      padding: 11px 16px;
+      font-size: 15px;
+      line-height: 1.7;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .msg-row.assistant .bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-1);
+      border-radius: 3px var(--r) var(--r) var(--r);
+      box-shadow: var(--shadow-sm);
+      max-width:  100%;
+    }
+
+    .msg-row.user .bubble {
+      background: var(--user-bg);
+      color: var(--user-text);
+      border-radius: var(--r) 3px var(--r) var(--r);
+      max-width: 75%;
+    }
+
+    /* Skill badge */
+    .skill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      background: var(--skill-bg);
+      color: var(--skill-text);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      align-self: flex-start;
+      animation: rise 0.18s ease-out;
+    }
+
+    .sdot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--skill-dot);
+      animation: pulse 1.4s infinite;
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Typing indicator */
+    .typing-bub {
+      display: inline-flex;
+      gap: 5px;
+      padding: 13px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px var(--r) var(--r) var(--r);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .typing-bub span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-3);
+      animation: tdot 1.1s infinite;
+    }
+
+    .typing-bub span:nth-child(2) { animation-delay: .15s; }
+    .typing-bub span:nth-child(3) { animation-delay: .3s; }
+
+    @keyframes tdot {
+      0%,55%,100% { transform: translateY(0); opacity: 0.4; }
+      27%          { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* ── Input ── */
+    .input-section {
+      flex-shrink: 0;
+      padding: 14px 24px 22px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    .input-box {
+      max-width: 712px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+
+    .input-box:focus-within {
+      border-color: #c8b9a6;
+      box-shadow: var(--shadow-md), 0 0 0 3px rgba(201,100,66,0.08);
+    }
+
+    .input-ta {
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 14px 18px 6px;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--text-1);
+      line-height: 1.65;
+      max-height: 160px;
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    .input-ta::placeholder { color: var(--text-3); }
+
+    .input-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px 10px 18px;
+    }
+
+    .input-hint { font-size: 11px; color: var(--text-3); }
+
+    .send-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+    }
+
+    .send-btn:hover:not(:disabled) { background: #b5562f; transform: scale(1.07); }
+    .send-btn:active:not(:disabled) { transform: scale(0.94); }
+    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .send-btn svg { width: 15px; height: 15px; fill: white; }
+
+    .footer-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 9px;
+    }
+
+    @media (max-width: 600px) {
+      .msg-row { padding: 4px 14px; }
+      .input-section { padding: 12px 14px 18px; }
+      .msg-row.user .bubble { max-width: 88%; }
+    }
+    .bubble h1, .bubble h2, .bubble h3 {
+    margin: 10px 0;
+    }
+
+    .bubble p {
+    margin: 6px 0;
+    }
+
+    .bubble ul {
+    padding-left: 20px;
+    }
+
+    .bubble code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    }
+
+    .bubble pre {
+    background: rgba(0,0,0,0.06);
+    padding: 10px;
+    border-radius: 6px;
+    overflow-x: auto;
+    }
+
+    /* TABLE */
+    .bubble table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    }
+
+    .bubble td, .bubble th {
+    border: 1px solid var(--border);
+    padding: 6px;
+    }
+
+    /* BUTTON LINK 🔥 */
+    .link-btn-wrap {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;   /* center horizontally */
+    }
+
+    .link-btn {
+        display: inline-flex;
+        align-items: center;       /* vertical center */
+        justify-content: center;   /* horizontal center */
+
+        background: var(--accent);
+        color: white;
+
+        border: none;
+        border-radius: 8px;
+
+        padding: 8px 16px;         /* NORMAL size */
+        font-size: 14px;
+        font-weight: 500;
+
+        cursor: pointer;
+        white-space: nowrap;       /* prevent breaking */
+
+        width: auto;               /* prevent stretching */
+        max-width: 100%;           /* safe for long text */
+
+        transition: 0.2s ease;
+    }
+
+    .link-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+    .bubble-wrap {
+    position: relative;
+    /* display: inline-flex; */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    }
+
+    /* Copy button */
+    .copy-btn {
+    margin-top: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+    }
+
+    .copy-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: var(--text-3);
+    }
+
+    /* Show on hover */
+    .msg-row.assistant:hover .copy-btn {
+    opacity: 1;
+    }
+
+    /* Click feedback */
+    .copy-btn:active {
+    transform: scale(0.9);
+    }
+
+    /* Copied state */
+    .copy-btn.copied {
+    opacity: 1;
+    color: var(--skill-dot);
+    font-size: 12px;
+    font-weight: 600;
+    }
+    .msg-row.assistant .bubble-wrap {
+    align-items: flex-start;
+    }
+
+    .msg-row.user .bubble-wrap {
+    align-items: flex-end;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="header-title">Skill Agent</span>
+  <button class="new-btn" onclick="newChat()">New chat</button>
+</header>
+
+<div class="feed" id="feed"></div>
+
+<div class="input-section">
+  <div class="input-box">
+    <textarea
+      id="inputField"
+      class="input-ta"
+      placeholder="Send a message…"
+      rows="1"
+    ></textarea>
+    <div class="input-bar">
+      <span class="input-hint">Shift + Return for new line</span>
+      <button class="send-btn" id="sendBtn">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="footer-note">AI can make mistakes. Verify important information.</div>
+</div>
+
+<script>
+  const feed       = document.getElementById('feed');
+  const inputField = document.getElementById('inputField');
+  const sendBtn    = document.getElementById('sendBtn');
+
+  let history = [];
+  let busy    = false;
+
+  /* Auto-grow textarea */
+  inputField.addEventListener('input', () => {
+    inputField.style.height = 'auto';
+    inputField.style.height = Math.min(inputField.scrollHeight, 160) + 'px';
+  });
+
+  inputField.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+
+  sendBtn.addEventListener('click', send);
+
+  function scrollEnd() { feed.scrollTop = feed.scrollHeight; }
+
+  function makeRow(role) {
+    const row = document.createElement('div');
+    row.className = `msg-row ${role}`;
+
+    const av = document.createElement('div');
+    av.className = 'av';
+    av.textContent = role === 'user' ? '😎' : '✦︎';
+
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+
+    const label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = role === 'user' ? 'You' : 'Assistant';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.dataset.raw = '';
+
+    // body.appendChild(label);
+    body.appendChild(label);
+
+    // wrapper
+    const wrap = document.createElement('div');
+    wrap.className = 'bubble-wrap';
+
+    wrap.appendChild(bubble);
+
+    // copy button (only for assistant)
+    if (role === 'assistant') {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.innerHTML = `
+        <svg viewBox="0 0 24 24">
+        <path d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+        </svg>
+    `;
+
+    copyBtn.onclick = () => {
+        // navigator.clipboard.writeText(bubble.innerText);
+        // navigator.clipboard.writeText(fullText);
+        navigator.clipboard.writeText(bubble.dataset.raw);
+
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = '✓';
+
+        setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyBtn.innerHTML = `
+            <svg viewBox="0 0 24 24">
+            <path d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+        `;
+        }, 1200);
+    };
+
+    wrap.appendChild(copyBtn);
+    }
+
+    body.appendChild(wrap);
+    // body.appendChild(bubble);
+    row.appendChild(av);
+    row.appendChild(body);
+    feed.appendChild(row);
+    scrollEnd();
+    return { body, bubble };
+  }
+
+  function makeTyping() {
+    const row = document.createElement('div');
+    row.className = 'msg-row assistant';
+    row.id = 'typing-row';
+
+    const av = document.createElement('div');
+    av.className = 'av';
+    av.textContent = '✦︎';
+
+    const body = document.createElement('div');
+    body.className = 'msg-body';
+
+    const label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = 'Assistant';
+
+    const tb = document.createElement('div');
+    tb.className = 'typing-bub';
+    tb.innerHTML = '<span></span><span></span><span></span>';
+
+    body.appendChild(label);
+    body.appendChild(tb);
+    row.appendChild(av);
+    row.appendChild(body);
+    feed.appendChild(row);
+    scrollEnd();
+    return row;
+  }
+
+  function addSkill(body, skillName) {
+    const badge = document.createElement('div');
+    badge.className = 'skill-badge';
+    badge.innerHTML = `<span class="sdot"></span>${skillName}`;
+    // body.insertBefore(badge, body.querySelector('.bubble'));
+    const wrap = body.querySelector('.bubble-wrap');
+    body.insertBefore(badge, wrap);
+    scrollEnd();
+  }
+
+  function newChat() {
+    history = [];
+    feed.innerHTML = '';
+    inputField.value = '';
+    inputField.style.height = 'auto';
+    inputField.focus();
+  }
+  function parseMarkdown(text) {
+    // let html = text.replace(/&/g, '&amp;')
+    //                 .replace(/</g, '&lt;')
+    //                 .replace(/>/g, '&gt;');
+    let html = text;
+    // Headers
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    html = html.replace(/^-{3,}$/gm, '<hr>');
+
+    // Bold / Italic
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Code blocks
+    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+    // BUTTON LINKS 🔥
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, text, url) => {
+        return `
+        <div class="link-btn-wrap">
+            <button class="link-btn" onclick="window.open('${url}', '_blank')">
+            ${text}
+            </button>
+        </div>`;
+    });
+
+    // Lists
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+
+    // Tables
+    const lines = html.split('\n');
+    let inTable = false;
+    let out = [];
+
+    for (let line of lines) {
+        if (line.startsWith('|') && line.endsWith('|')) {
+        const cells = line.split('|').slice(1, -1).map(c => c.trim());
+
+        if (!inTable) {
+            out.push('<table>');
+            inTable = true;
+        }
+
+        out.push('<tr>' + cells.map(c => `<td>${parseMarkdown(c)}</td>`).join('') + '</tr>');
+        } else {
+        if (inTable) {
+            out.push('</table>');
+            inTable = false;
+        }
+        out.push(line);
+        }
+    }
+
+    if (inTable) out.push('</table>');
+
+    html = out.join('\n');
+
+    // Paragraphs
+    html = html.split('\n').map(line => {
+        if (line.trim() && !line.startsWith('<')) {
+        return `<p>${line}</p>`;
+        }
+        return line;
+    }).join('');
+
+    return html;
+    }
+  async function send() {
+    const text = inputField.value.trim();
+    if (!text || busy) return;
+
+    makeRow('user').bubble.textContent = text;
+    history.push({ role: 'user', content: text });
+
+    inputField.value = '';
+    inputField.style.height = 'auto';
+    sendBtn.disabled = true;
+    busy = true;
+
+    const typingRow = makeTyping();
+    let fullText = '';
+    let bubble   = null;
+    let bodyEl   = null;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      typingRow.remove();
+      const built = makeRow('assistant');
+      bodyEl = built.body;
+      bubble = built.bubble;
+
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value).split('\n').filter(l => l.trim());
+        for (const line of lines) {
+          try {
+            const d = JSON.parse(line);
+            if (d.type === 'skill') {
+              addSkill(bodyEl, d.skill_name);
+            } else if (d.type === 'text') {
+            //   bubble.textContent += d.content;
+            // bubble.innerHTML += parseMarkdown(d.content);
+            fullText += d.content;
+            bubble.dataset.raw = fullText;
+            bubble.innerHTML = parseMarkdown(fullText);
+            //   fullText += d.content;
+              scrollEnd();
+            }
+          } catch {}
+        }
+      }
+
+      history.push({ role: 'assistant', content: fullText });
+
+    } catch (err) {
+      typingRow.remove();
+      makeRow('assistant').bubble.textContent = 'Something went wrong. Please try again.';
+      console.error(err);
+    } finally {
+      sendBtn.disabled = false;
+      busy = false;
+      inputField.focus();
+    }
+  }
+
+  inputField.focus();
+</script>
+</body>
+</html>
