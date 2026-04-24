@@ -1,6 +1,13 @@
 # Skill Agent
 this is a test Agent for testing custome Agent skills.
 
+## Tech Stack
+- Language : Python
+- Framework : agent_framework
+- DB : SQLite (for demo)
+- Skills : Agent Skills - timedate, docskills, enquiry_skill, Fitness Coach
+
+
 # Enquiry Skill
 
 ![enquiryimage1](image.png)
