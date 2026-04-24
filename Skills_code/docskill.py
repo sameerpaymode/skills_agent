@@ -36,8 +36,8 @@ from reportlab.lib.styles import getSampleStyleSheet
 from agent_framework import Skill
 document_skill = Skill(
     name="document-skill",
-    description="save text as a pdf",
-    content="Use the save_text_as_pdf script to save text content to a pdf file.",
+    description="save text as a pdf . required inputs file name , text content.",
+    content="Use the save_text_as_pdf script to save text content to a pdf file. instruction: while printing URL follow [placeholder](link) format",
 )
 
 
